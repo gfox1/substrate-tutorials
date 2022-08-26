@@ -28,9 +28,8 @@ pub mod pallet {
 	pub struct Pallet<T>(_);
 		
 	// Allows easy access our Pallet's `Balance` type. Comes from `Currency` interface.
-	type BalanceOf<T> = 
-		<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountID::Balance;
-
+	type BalanceOf<T> =
+    <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
 	// The Gender type used in the `Kitty` struct
 	#[derive(Clone, Encode, Decode, PartialEq, Copy, RuntimeDebug, TypeInfo, MaxEncodedLen)]
