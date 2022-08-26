@@ -19,16 +19,55 @@ pub mod pallet {
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 
+	// Added this line to include Currency and Randomness in pallet
+	use frame_support::traits::{Currency, Randomness};
+
+
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
 	pub struct Pallet<T>(_);
+		
+	// Allows easy access our Pallet's `Balance` type. Comes from `Currency` interface.
+	type BalanceOf<T> = 
+		<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountID::Balance;
 
-	/// Configure the pallet by specifying the parameters and types on which it depends.
-	#[pallet::config]
-	pub trait Config: frame_system::Config {
-		/// Because this pallet emits events, it depends on the runtime's definition of an event.
-		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+
+	// The Gender type used in the `Kitty` struct
+	#[derive(Clone, Encode, Decode, PartialEq, Copy, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+	pub enum Gender {
+		Male,
+		Female,
 	}
+
+	// Struct for holding kitty information
+	#[derive(Clone, Encode, Decode, PartialEq, RuntimeDebug, TypeInfo, MaxEncodedLen, Copy)]
+	#[scale_info(skip_type_params(T))]
+	pub struct Kitty<T: Config> {
+		// Using 16 bytes to represent a kitty DNA
+		pub dna: [u8; 16],
+		// `None` assumes not for sale
+		pub price: Option<BalanceOf<T>>,
+		pub gender: Gender,
+		pub owner: T::AccountId,
+	}
+
+// Your Pallet's configuration trait, representing custom external types and interfaces.
+#[pallet::config]
+pub trait Config: frame_system::Config {
+    /// Because this pallet emits events, it depends on the runtime's definition of an event.
+    type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+
+    /// The Currency handler for the kitties pallet.
+    type Currency: Currency<Self::AccountId>;
+
+    /// The maximum amount of kitties a single account can own.
+    #[pallet::constant]
+    type MaxKittiesOwned: Get<u32>;
+
+    /// The type of Randomness we want to specify for this pallet.
+    type KittyRandomness: Randomness<Self::Hash, Self::BlockNumber>;
+}
+
 
 	// The pallet's runtime storage items.
 	// https://docs.substrate.io/main-docs/build/runtime-storage/
