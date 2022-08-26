@@ -93,25 +93,105 @@ pub trait Config: frame_system::Config {
 	pub enum Event<T: Config> {
 		/// Event documentation should end with an array that provides descriptive names for event
 		/// parameters. [something, who]
-		SomethingStored(u32, T::AccountId),
+
+		Created { kitty: [u8; 16], owner: T::AccountId},
 	}
 
 	// Errors inform users that something went wrong.
 	#[pallet::error]
 	pub enum Error<T> {
-		/// Error names should be descriptive.
-		NoneValue,
-		/// Errors should have helpful documentation associated with them.
-		StorageOverflow,
+		/// Account has reached Max Kitties owned
+		TooManyOwned,
+		/// This kitt already exisits
+		DuplicateKitty,
+		/// An overflow has occured!
+		Overflow,
 	}
 
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
 	// These functions materialize as "extrinsics", which are often compared to transactions.
 	// Dispatchable functions must be annotated with a weight and must return a DispatchResult.
 	#[pallet::call]
-	impl<T: Config> Pallet<T> {}
-	
-	// Your Pallet's internal functions.
-    impl<T: Config> Pallet<T> {}
-}
+	// Your Pallet's callable functions.
+    impl<T: Config> Pallet<T> {
 
+		// Create a new unique kitty
+		// The acutal kitty creation is done in the 'mint()' function.
+		#[pallet::weight(0)]
+		pub fn create_kitty(origin: OriginFor<T>) -> DispatchResult {
+			// Make sure the caller is from a signed origin
+			let sender = ensure_signed(origin)?;
+
+			// Generate uniqiue DNA and Gender using a helper function
+			let (kitty_gen_dna, gender) = Self::gen_dna();
+
+			// Write new kitty to storage by calling helper function
+			Self::mint(&sender, kitty_gen_dna, gender)?;
+
+			Ok(())
+		}
+
+	}
+	
+	
+	
+	// Your Pallet's internal functions (not callable by users).
+	 // Your Pallet's internal functions.
+	 impl<T: Config> Pallet<T> {
+        // Generates and returns DNA and Gender
+        fn gen_dna() -> ([u8; 16], Gender) {
+            // Create randomness
+            let random = T::KittyRandomness::random(&b"dna"[..]).0;
+
+            // Create randomness payload. Multiple kitties can be generated in the same block,
+            // retaining uniqueness.
+            let unique_payload = (
+                random,
+                frame_system::Pallet::<T>::extrinsic_index().unwrap_or_default(),
+                frame_system::Pallet::<T>::block_number(),
+            );
+
+            // Turns into a byte array
+            let encoded_payload = unique_payload.encode();
+            let hash = frame_support::Hashable::blake2_128(&encoded_payload);
+
+            // Generate Gender
+            if hash[0] % 2 == 0 {
+                (hash, Gender::Male)
+            } else {
+                (hash, Gender::Female)
+            }
+        }
+
+        // Helper to mint a kitty
+        pub fn mint(
+            owner: &T::AccountId,
+            dna: [u8; 16],
+            gender: Gender,
+        ) -> Result<[u8; 16], DispatchError> {
+            // Create a new object
+            let kitty = Kitty::<T> { dna, price: None, gender, owner: owner.clone() };
+
+            // Check if the kitty does not already exist in our storage map
+            ensure!(!Kitties::<T>::contains_key(&kitty.dna), Error::<T>::DuplicateKitty);
+
+            // Performs this operation first as it may fail
+            let count = CountForKitties::<T>::get();
+            let new_count = count.checked_add(1).ok_or(Error::<T>::Overflow)?;
+
+            // Append kitty to KittiesOwned
+            KittiesOwned::<T>::try_append(&owner, kitty.dna)
+                .map_err(|_| Error::<T>::TooManyOwned)?;
+
+            // Write new kitty to storage
+            Kitties::<T>::insert(kitty.dna, kitty);
+            CountForKitties::<T>::put(new_count);
+
+            // Deposit our "Created" event.
+            Self::deposit_event(Event::Created { kitty: dna, owner: owner.clone() });
+
+            // Returns the DNA of the new kitty if this succeeds
+            Ok(dna)
+        }
+    }
+}
