@@ -165,7 +165,27 @@ pub mod pallet {
             Self::deposit_event(Event::PriceSet {kitty: kitty_id, price: new_price});
 
             Ok(())
-         }
+        }
+
+        // Buy a kitty that is for sale. The bid price from the buyer has top be equal or 
+        // higher than the ask price of the seller.
+        // 
+        // This will reset the asking price of the kitty, marking it not for sale.
+        // Marking this method 'transactional' so when an error is returned, we wnsure no storage
+        // is changed.
+        #[pallet::weight(0)]
+        pub fn buy_kitty(
+            origin: OriginFor<T>,
+            kitty_id: [u8; 16],
+            bid_price: BalanceOf<T>,
+        ) -> DispatchResult {
+            // make sure the caller is from a signed origin
+            let buyer = ensure_signed(origin)?;
+            // Transfer the kitty from seller to buyer as a sale
+            Self::do_buy_kitty(kitty_id, buyer, bid_price)?;
+
+            Ok(())
+        }
     }
 
     // Your Pallet's internal functions.
