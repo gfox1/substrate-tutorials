@@ -81,6 +81,8 @@ pub mod pallet {
         Transferred { from: T::AccountId, to: T::AccountId, kitty: [u8; 16] },
         // The price of the kitty was successfully set
         PriceSet {kitty: [u8; 16], price: Option<BalanceOf<T>>},
+        // A kitty was successfully sold
+        Sold { seller: T::AccountId, buyer: T::AccountId, kitty: [u8; 16], price: BalanceOf<T>},
     }
 
     // Your Pallet's error messages.
@@ -98,6 +100,10 @@ pub mod pallet {
         NotOwner,
         /// Trying to transfer or buy a kitty from oneself.
         TransferToSelf,
+        // Esures that the buying price is greater than the asking price
+        BidPriceTooLow,
+        // This kitty is not for sale
+        NotForSale,
     }
 
     // Your Pallet's callable functions.
@@ -243,6 +249,60 @@ pub mod pallet {
             let mut to_owned = KittiesOwned::<T>::get(&to);
             to_owned.try_push(kitty_id).map_err(|()| Error::<T>::TooManyOwned)?;
 
+            // Transfer succeeded, update the kitty owner and reset the price to `None`.
+            kitty.owner = to.clone();
+            kitty.price = None;
+
+            // Write updates to storage
+            Kitties::<T>::insert(&kitty_id, kitty);
+            KittiesOwned::<T>::insert(&to, to_owned);
+            KittiesOwned::<T>::insert(&from, from_owned);
+
+            Self::deposit_event(Event::Transferred { from, to, kitty: kitty_id });
+
+            Ok(())
+        }
+
+        // A helper funcction for purchasing a kitty
+        pub fn do_buy_kitty(
+            kitty_id: [u8; 16],
+            to: T::AccountId,
+            bid_price: BalanceOf<T>,
+        ) -> DispatchResult {
+            // Get the kitty
+            let mut kitty = Kitties::<T>::get(&kitty_id).ok_or(Error::<T>::NoKitty)?;
+            let from = kitty.owner;
+
+            ensure!(from != to, Error::<T>::TransferToSelf);
+            let mut from_owned = KittiesOwned::<T>::get(&from);
+
+            // Remove kitty from list of owned kitties.
+            if let Some(ind) = from_owned.iter().position(|&id| id == kitty_id) {
+                from_owned.swap_remove(ind);
+            } else {
+                return Err(Error::<T>::NoKitty.into())
+            }
+
+            // Add kitty to the list of owned kitties.
+            let mut to_owned = KittiesOwned::<T>::get(&to);
+            to_owned.try_push(kitty_id).map_err(|()| Error::<T>::TooManyOwned)?;
+
+            // Mutating state here via a balance transfer, so nothing is allowed to fail after this.
+            if let Some(price) = kitty.price {
+                ensure!(bid_price >= price, Error::<T>::BidPriceTooLow);
+                // Transfer the amount from buyer to seller
+                T::Currency::transfer(&to, &from, price, frame_support::traits::ExistenceRequirement::KeepAlive)?;
+                // Deposit sold event
+                Self::deposit_event(Event::Sold {
+                    seller: from.clone(),
+                    buyer: to.clone(),
+                    kitty: kitty_id,
+                    price,
+                });
+            } else {
+                return Err(Error::<T>::NotForSale.into())
+            }
+            
             // Transfer succeeded, update the kitty owner and reset the price to `None`.
             kitty.owner = to.clone();
             kitty.price = None;
