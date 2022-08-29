@@ -9,7 +9,7 @@ pub mod pallet {
 
     use frame_support::traits::{Currency, Randomness};
 
-    // The basis which we buil
+    // The basis which we build
     #[pallet::pallet]
     pub struct Pallet<T>(_);
 
@@ -79,6 +79,8 @@ pub mod pallet {
         Created { kitty: [u8; 16], owner: T::AccountId },
         /// A kitty was successfully transferred.
         Transferred { from: T::AccountId, to: T::AccountId, kitty: [u8; 16] },
+        // The price of the kitty was successfully set
+        PriceSet {kitty: [u8; 16], price: Option<BalanceOf<T>>},
     }
 
     // Your Pallet's error messages.
@@ -135,6 +137,29 @@ pub mod pallet {
             Self::do_transfer(kitty_id, to)?;
             Ok(())
         }
+
+        #[pallet::weight(0)]
+        pub fn set_price(
+            origin: OriginFor<T>, 
+            kitty_id: [u8; 16],
+            new_price: Option<BalanceOf<T>>,
+         ) -> DispatchResult {
+            // Make sure the caller is from a signed origin
+            let sender = ensure_signed(origin)?;
+
+            // Ensure the kitty exists and is called by the kitty owner
+            let mut kitty = Kitties::<T>::get(&kitty_id).ok_or(Error::<T>::NoKitty)?;
+            ensure!(kitty.owner == sender, Error::<T>::NotOwner);
+
+            // set the price in storage
+            kitty.price = new_price;
+            Kitties::<T>::insert(&kitty_id, kitty);
+
+            // Deposit a "PriceSet" event
+            Self::deposit_event(Event::PriceSet {kitty: kitty_id, price: new_price});
+
+            Ok(())
+         }
     }
 
     // Your Pallet's internal functions.
