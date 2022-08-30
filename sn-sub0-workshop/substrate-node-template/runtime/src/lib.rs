@@ -36,6 +36,7 @@ pub use frame_support::{
 	StorageValue,
 };
 pub use frame_system::Call as SystemCall;
+pub use frame_support::traits::EqualPrivilegeOnly;
 pub use pallet_balances::Call as BalancesCall;
 pub use pallet_timestamp::Call as TimestampCall;
 use pallet_transaction_payment::CurrencyAdapter;
@@ -101,7 +102,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	//   `spec_version`, and `authoring_version` are the same between Wasm and native.
 	// This value is set to 100 to notify Polkadot-JS App (https://polkadot.js.org/apps) to use
 	//   the compatible custom types.
-	spec_version: 100,
+	spec_version: 102,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -142,6 +143,10 @@ parameter_types! {
 	pub BlockLength: frame_system::limits::BlockLength = frame_system::limits::BlockLength
 		::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
 	pub const SS58Prefix: u8 = 42;
+	pub MaximumSchedulerWeight: Weight = 10_000_000;
+ 	pub const MaxScheduledPerBlock: u32 = 50;
+	pub const ExistentialDeposit: u128 = 1000;  // Update this value.
+	pub const MaxLocks: u32 = 50;
 }
 
 // Configure FRAME pallets to include in runtime.
@@ -298,6 +303,20 @@ impl pallet_template::Config for Runtime {
 	type MaxKittiesOwned = frame_support::pallet_prelude::ConstU32<100>;
 }
 
+impl pallet_scheduler::Config for Runtime {
+	type Event = Event;
+	type Origin = Origin;
+	type PalletsOrigin = OriginCaller;
+	type Call = Call;
+	type MaximumWeight = MaximumSchedulerWeight;
+	type ScheduleOrigin = frame_system::EnsureRoot<AccountId>;
+	type MaxScheduledPerBlock = MaxScheduledPerBlock;
+	type WeightInfo = ();
+	type OriginPrivilegeCmp = EqualPrivilegeOnly;
+	type PreimageProvider = ();
+	type NoPreimagePostponement = ();
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub struct Runtime
@@ -317,6 +336,7 @@ construct_runtime!(
 		Sudo: pallet_sudo,
 		// Include the custom logic from the pallet-template in the runtime.
 		SubstrateKitties: pallet_template,
+		Scheduler: pallet_scheduler,
 	}
 );
 
