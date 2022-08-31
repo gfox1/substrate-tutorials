@@ -359,6 +359,11 @@ impl pallet_contracts::Config for Runtime {
 	type MaxStorageKeyLen = ConstU32<{ 512 * 1024 }>;
   }
 
+  /// Configure the pallet-proof-of-existance in pallets/template.
+	impl pallet_proof_of_existance::Config for Runtime {
+		type Event = Event;
+	}
+
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
@@ -381,6 +386,7 @@ construct_runtime!(
 		SubstrateKitties: pallet_template,
 		Scheduler: pallet_scheduler,
 		Contracts: pallet_contracts,
+		Existance: pallet_proof_of_existance,
 	}
 );
 

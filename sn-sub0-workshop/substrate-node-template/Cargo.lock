@@ -3797,6 +3797,7 @@ dependencies = [
  "pallet-contracts-rpc-runtime-api",
  "pallet-grandpa",
  "pallet-nicks",
+ "pallet-proof-of-existance",
  "pallet-randomness-collective-flip",
  "pallet-scheduler",
  "pallet-sudo",
@@ -4148,6 +4149,20 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
+]
+
+[[package]]
+name = "pallet-proof-of-existance"
+version = "4.0.0-dev"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
 ]
 
 [[package]]

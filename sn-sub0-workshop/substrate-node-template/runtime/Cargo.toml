@@ -56,6 +56,8 @@ hex-literal = { version = "0.3.4", optional = true }
 
 # Local Dependencies
 pallet-template = { version = "4.0.0-dev", default-features = false, path = "../pallets/template" }
+pallet-proof-of-existance = { version = "4.0.0-dev", default-features = false, path = "../pallets/proof-of-existance" }
+
 
 [build-dependencies]
 substrate-wasm-builder = { version = "5.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.28" }
@@ -94,6 +96,7 @@ std = [
 	"pallet-contracts/std",
   	"pallet-contracts-primitives/std",
 	"pallet-contracts-rpc-runtime-api/std",
+	"pallet-proof-of-existance/std"
 ]
 runtime-benchmarks = [
 	"frame-benchmarking/runtime-benchmarks",
