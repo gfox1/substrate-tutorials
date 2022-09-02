@@ -30,6 +30,7 @@
   },
   "dependencies": {
     "@polkadot/api": "^9.2.4",
-    "@polkadot/rpc-provider": "^9.2.4"
+    "@polkadot/rpc-provider": "^9.2.4",
+    "@substrate/connect": "^0.7.11"
   }
 }
