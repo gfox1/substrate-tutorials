@@ -113,6 +113,7 @@ pub mod pallet {
 	}
 }
 
+// I believe that this is used in the pallet coupling recipe
 impl<T: Config> AccountSet for Module<T> {
 	type AccountId = T::AccountId;
 

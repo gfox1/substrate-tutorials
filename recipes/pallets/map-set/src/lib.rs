@@ -74,15 +74,15 @@ pub mod pallet {
 				Error::<T>::MembershipLimitReached
 			);
 
-			// We don't want to add duplicate members, so we check whether the potential new
-			// member is already present in the list. Because the membership is stored as a hash
-			// map this check is constant time O(1)
+			/// We don't want to add duplicate members, so we check whether the potential new
+			///  member is already present in the list. Because the membership is stored as a hash
+			///  map this check is constant time O(1)
 			ensure!(
 				!Members::<T>::contains_key(&new_member),
 				Error::<T>::AlreadyMember
 			);
 
-			// Insert the new member and emit the event
+			/// Insert the new member and emit the event
 			Members::<T>::insert(&new_member, ());
 			MemberCount::<T>::put(member_count + 1); // overflow check not necessary because of maximum
 			Self::deposit_event(Event::MemberAdded(new_member));
@@ -107,6 +107,7 @@ pub mod pallet {
 	}
 }
 
+// I believe that this is used for the pallet coupling module
 impl<T: Config> AccountSet for Module<T> {
 	type AccountId = T::AccountId;
 

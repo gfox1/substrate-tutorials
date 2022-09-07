@@ -8,6 +8,7 @@ pub use pallet::*;
 #[cfg(test)]
 mod tests;
 
+
 #[frame_support::pallet]
 pub mod pallet {
 	use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*};
