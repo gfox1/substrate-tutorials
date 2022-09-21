@@ -9,6 +9,21 @@ mod ringbuffer;
 
 use ringbuffer::{RingBufferTrait, RingBufferTransient};
 
+	// pub trait RingBufferTrait<Item>
+	// where
+	// 	Item: Codec + EncodeLike,
+	// {
+	 	/// Store all changes made in the underlying storage.
+	// 	fn commit(&self);
+	 	/// Push an item onto the end of the queue.
+	// 	fn push(&mut self, i: Item);
+	 	/// Pop an item from the start of the queue.
+	// 	fn pop(&mut self) -> Option<Item>;
+	 	/// Return whether the queue is empty.
+	// 	fn is_empty(&self) -> bool;
+	// }
+
+
 pub use pallet::*;
 
 #[cfg(test)]
