@@ -13,6 +13,7 @@ mod tests;
 #[frame_support::pallet]
 pub mod pallet {
 	use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*};
+	use frame_support::codec::{Encode, Decode};
 	use frame_system::pallet_prelude::*;
 
 	#[pallet::config]
